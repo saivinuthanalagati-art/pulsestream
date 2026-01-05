@@ -1,0 +1,16 @@
+# ===== CMake / C++ =====
+build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+*.o
+
+# ===== Node / React =====
+node_modules/
+dist/
+build/
+.env
+
+# ===== macOS =====
+.DS_Store

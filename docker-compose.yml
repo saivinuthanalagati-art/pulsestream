@@ -1,0 +1,30 @@
+services:
+  engine:
+    build: ./engine
+    container_name: pulsestream-engine
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./engine/data:/app/data
+
+  gateway:
+    build: ./gateway
+    container_name: pulsestream-gateway
+    environment:
+      - ENGINE_HOST=engine
+      - ENGINE_PORT=9000
+      - WS_PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - engine
+
+  ui:
+    build: ./ui
+    container_name: pulsestream-ui
+    environment:
+      - VITE_WS_URL=ws://localhost:8080
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
