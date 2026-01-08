@@ -8,7 +8,7 @@ Processes data in real time (aggregation, filtering, transformation)
 Exposes live stats/metrics for monitoring
 Visualizes throughput + system health in a web dashboard
 
-##✨ Key Features
+✨ Key Features
 - High-performance core (C++ engine) optimized for low-latency processing
 - Streaming pipeline architecture (producer → processor → output)
 - Live dashboard (React) for real-time monitoring & debugging
@@ -16,7 +16,7 @@ Visualizes throughput + system health in a web dashboard
 - Modular design : easy to add new processors/operators
 - Concurrency-focused : designed around safe, scalable throughput
 
-##🛠️ Tech Stack
+🛠️ Tech Stack
 ###Core Engine
 C++ (low-level processing, performance-focused design)
 ###Services
@@ -27,7 +27,7 @@ React (real-time dashboard)
 CMake (build)
 (Optional) Docker for consistent local setup
 
-##📊 Metrics Shown in Dashboard
+📊 Metrics Shown in Dashboard
 Events/sec throughput
 Processing latency (avg / p95 if implemented)
 Queue depth / backlog
