@@ -5,7 +5,6 @@
  * - Optional connection to Engine: tcp://127.0.0.1:9000
  * - Producer TCP ingress for events: tcp://127.0.0.1:9001  (NDJSON)
  *
- * The UI updates ONLY on messages with { type: "SNAPSHOT" }.
  */
 
 import net from "net";
@@ -19,10 +18,10 @@ const PRODUCER_PORT = Number(process.env.PRODUCER_PORT || 9001);
 
 // ---- State used to build SNAPSHOT ----
 let group = "g1";
-let totalEnd = 0;            // total events ingested (all topics)
-let eventsThisSecond = 0;    // for throughput
-const topicEnds = new Map(); // topic -> end_offset (simple counter)
-const topicPartitions = new Map(); // topic -> Set(partitions)
+let totalEnd = 0;           
+let eventsThisSecond = 0;  
+const topicEnds = new Map(); 
+const topicPartitions = new Map(); 
 
 // ---- WebSocket (UI) ----
 const wss = new WebSocketServer({ port: WS_PORT });
@@ -55,7 +54,7 @@ try {
 
   engineSock.setEncoding("utf8");
 
-  // If your engine actually streams NDJSON out, we can count it too.
+  
   let buf = "";
   engineSock.on("data", (chunk) => {
     buf += chunk;
@@ -64,8 +63,8 @@ try {
       const line = buf.slice(0, idx).trim();
       buf = buf.slice(idx + 1);
       if (!line) continue;
-      // Treat each line as an event (even if we don't parse it)
-      ingestEventLine(line, /*fromEngine*/ true);
+      
+      ingestEventLine(line,true);
     }
   });
 
@@ -83,7 +82,6 @@ try {
 }
 
 // ---- Producer TCP server (NDJSON in) ----
-// Send NDJSON here so the gateway definitely sees & counts events.
 const producerServer = net.createServer((client) => {
   client.setEncoding("utf8");
   let buf = "";
@@ -96,9 +94,8 @@ const producerServer = net.createServer((client) => {
       buf = buf.slice(idx + 1);
       if (!line) continue;
 
-      ingestEventLine(line, /*fromEngine*/ false);
+      ingestEventLine(line, false);
 
-      // Optional: forward into engine if it's expecting input NDJSON
       try {
         if (engineSock && !engineSock.destroyed) {
           engineSock.write(line + "\n");
@@ -114,12 +111,9 @@ producerServer.listen(PRODUCER_PORT, "127.0.0.1", () => {
 
 // ---- Event ingestion / counters ----
 function ingestEventLine(line, fromEngine) {
-  // Count event
   totalEnd += 1;
   eventsThisSecond += 1;
 
-  // Try to parse topic/partition for nicer tables.
-  // If parse fails, we fall back to "demo"/partition 0.
   let topic = "demo";
   let partition = 0;
 
@@ -131,7 +125,6 @@ function ingestEventLine(line, fromEngine) {
       if (!Number.isNaN(p)) partition = p;
     }
   } catch {
-    // ignore parse errors; still count
   }
 
   topicEnds.set(topic, (topicEnds.get(topic) || 0) + 1);
@@ -139,17 +132,13 @@ function ingestEventLine(line, fromEngine) {
   if (!topicPartitions.has(topic)) topicPartitions.set(topic, new Set());
   topicPartitions.get(topic).add(partition);
 
-  // (Optional) You can log first few events to confirm flow
-  // if (!fromEngine && totalEnd < 5) console.log("[gateway] event:", line);
 }
 
-// ---- Emit SNAPSHOT every 1s (this drives your UI) ----
 setInterval(() => {
   const now = Date.now();
   const throughput = eventsThisSecond;
   eventsThisSecond = 0;
 
-  // Build topics[] for "Topics & end offsets" table
   const topics = [];
   for (const [topic, end] of topicEnds.entries()) {
     const parts = Array.from(topicPartitions.get(topic) || new Set([0])).sort((a, b) => a - b);
@@ -161,17 +150,15 @@ setInterval(() => {
       })),
     });
   }
-  // Stable order
   topics.sort((a, b) => a.topic.localeCompare(b.topic));
 
-  // Build groupStats for lag table (we’ll assume committed catches up = 0 lag)
   const groupStats = {
     group,
     topics: topics.map((t) => ({
       topic: t.topic,
       partitions_stats: (t.partition_stats || []).map((p) => ({
         partition: p.partition,
-        committed_offset: p.end_offset, // pretend consumer is caught up
+        committed_offset: p.end_offset, 
         end_offset: p.end_offset,
         lag: 0,
       })),
